@@ -38,7 +38,6 @@ function parseMultiPrice(raw: string | undefined): PricePair[] | null {
       const price = seg.slice(colonIdx + 1).trim()
       if (label && price) { pairs.push({ label, price }); continue }
     }
-    // No colon — treat whole segment as a label-only entry (unlikely but safe)
     pairs.push({ label: seg, price: '' })
   }
   return pairs.length >= 2 ? pairs : null
@@ -83,7 +82,6 @@ function groupByCategory(items: ApiMenuItem[]): Record<string, ApiMenuItem[]> {
     return acc
   }, {})
 }
-
 
 function MenuSkeleton({ night = false }: { night?: boolean }) {
   const itemBg = night ? 'bg-[#1E1E24] border-[#2D2D2D]' : 'bg-white border-[#E0E0E0]'
@@ -144,7 +142,6 @@ export default function Carte() {
     return groupByCategory(items)
   }, [menuItems])
 
-  // Ordered category lists (BIERES excluded — always hardcoded)
   const apiDayCategories = useMemo(() =>
     sortByCategoryOrder(Object.keys(dayGroups).filter(c => c !== 'BOISSONS'), CATEGORY_ORDER),
     [dayGroups]
@@ -164,7 +161,6 @@ export default function Carte() {
   const [activeNightPill, setActiveNightPill] = useState<string>('BIERES')
   const [dietFilter, setDietFilter] = useState<DietTag | null>(null)
 
-  // Reset diet filter on mode switch; init first pill once API data arrives
   useEffect(() => { setDietFilter(null) }, [isNight])
   useEffect(() => {
     if (apiDayCategories.length > 0 && !activeDayPill) setActiveDayPill(apiDayCategories[0])
@@ -202,8 +198,6 @@ export default function Carte() {
     { tag: 'gf', labelKey: 'filter_gf' },
   ]
 
-  const itemVisible = (tags: DietTag[]) => !dietFilter || tags.includes(dietFilter)
-
   return (
     <div className={`${bg} min-h-screen transition-colors duration-300`}>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[118px]">
@@ -227,15 +221,15 @@ export default function Carte() {
         {/* ─── DAY MODE ─────────────────────────────────────────────── */}
         {!isNight && (
           <div key="day" className="mode-fade-in">
-            {/* Category pills — derived from API + static BOISSONS */}
+            {/* Category pills — horizontal scroll on mobile */}
             <div className={`sticky top-[118px] z-30 ${headerBg} border-b ${divider}`}>
-              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-center flex-wrap gap-3">
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex overflow-x-auto sm:justify-center gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {(menuLoading ? ['...'] : [...apiDayCategories, ...(dayGroups['BOISSONS'] ? ['BOISSONS'] : [])]).map(cat => (
                   <button
                     key={cat}
                     onClick={() => { setActiveDayPill(cat); scrollTo(daySectionRefs, cat) }}
                     disabled={menuLoading}
-                    className={`shrink-0 h-8 px-4 rounded-full border text-[12px] uppercase tracking-[0.04em] transition-all ${menuLoading ? 'opacity-40 cursor-default border-[#E0E0E0] text-[#AAA]' : activeDayPill === cat ? pillActive : pillBg}`}
+                    className={`shrink-0 whitespace-nowrap h-8 px-4 rounded-full border text-[12px] uppercase tracking-[0.04em] transition-all ${menuLoading ? 'opacity-40 cursor-default border-[#E0E0E0] text-[#AAA]' : activeDayPill === cat ? pillActive : pillBg}`}
                     style={{ fontFamily: "'Inter', sans-serif" }}
                   >
                     {menuLoading ? '·····' : getCatLabel(cat)}
@@ -244,11 +238,11 @@ export default function Carte() {
               </div>
             </div>
 
-            {/* Dietary filter bar */}
-            <div className={`py-2 flex justify-center flex-wrap gap-2 border-b ${divider}`}>
+            {/* Dietary filter bar — horizontal scroll on mobile */}
+            <div className={`py-2 flex overflow-x-auto sm:justify-center gap-2 border-b ${divider} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
               <button
                 onClick={() => setDietFilter(null)}
-                className={`shrink-0 h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all ${!dietFilter ? dietPillActive : dietPillInactive}`}
+                className={`shrink-0 whitespace-nowrap h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all ${!dietFilter ? dietPillActive : dietPillInactive}`}
                 style={{ fontFamily: "'Inter', sans-serif" }}
               >
                 {t('filter_all')}
@@ -257,7 +251,7 @@ export default function Carte() {
                 <button
                   key={tag}
                   onClick={() => setDietFilter(dietFilter === tag ? null : tag)}
-                  className={`shrink-0 h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all flex items-center gap-1 ${dietFilter === tag ? dietPillActive : dietPillInactive}`}
+                  className={`shrink-0 whitespace-nowrap h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all flex items-center gap-1 ${dietFilter === tag ? dietPillActive : dietPillInactive}`}
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   {TAG_ICONS[tag]} {t(labelKey)}
@@ -313,15 +307,15 @@ export default function Carte() {
         {/* ─── NIGHT MODE ───────────────────────────────────────────── */}
         {isNight && (
           <div key="night" className="mode-fade-in">
-            {/* Category pills — fully API-driven */}
+            {/* Category pills — horizontal scroll on mobile */}
             <div className={`sticky top-[118px] z-30 ${headerBg} border-b ${divider}`}>
-              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-center flex-wrap gap-3">
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex overflow-x-auto sm:justify-center gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {(menuLoading ? ['...'] : apiNightCategories).map(cat => (
                   <button
                     key={cat}
                     onClick={() => { setActiveNightPill(cat); scrollTo(nightSectionRefs, cat) }}
                     disabled={menuLoading}
-                    className={`shrink-0 h-8 px-4 rounded-full border text-[12px] uppercase tracking-[0.04em] transition-all ${menuLoading ? 'opacity-40 cursor-default border-[#2D2D2D] text-[#555]' : activeNightPill === cat ? pillActive : pillBg}`}
+                    className={`shrink-0 whitespace-nowrap h-8 px-4 rounded-full border text-[12px] uppercase tracking-[0.04em] transition-all ${menuLoading ? 'opacity-40 cursor-default border-[#2D2D2D] text-[#555]' : activeNightPill === cat ? pillActive : pillBg}`}
                     style={{ fontFamily: "'Inter', sans-serif" }}
                   >
                     {menuLoading ? '·····' : getCatLabel(cat)}
@@ -330,11 +324,11 @@ export default function Carte() {
               </div>
             </div>
 
-            {/* Dietary filter bar */}
-            <div className={`py-2 flex justify-center flex-wrap gap-2 border-b ${divider}`}>
+            {/* Dietary filter bar — horizontal scroll on mobile */}
+            <div className={`py-2 flex overflow-x-auto sm:justify-center gap-2 border-b ${divider} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
               <button
                 onClick={() => setDietFilter(null)}
-                className={`shrink-0 h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all ${!dietFilter ? dietPillActive : dietPillInactive}`}
+                className={`shrink-0 whitespace-nowrap h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all ${!dietFilter ? dietPillActive : dietPillInactive}`}
                 style={{ fontFamily: "'Inter', sans-serif" }}
               >
                 {t('filter_all')}
@@ -343,7 +337,7 @@ export default function Carte() {
                 <button
                   key={tag}
                   onClick={() => setDietFilter(dietFilter === tag ? null : tag)}
-                  className={`shrink-0 h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all flex items-center gap-1 ${dietFilter === tag ? dietPillActive : dietPillInactive}`}
+                  className={`shrink-0 whitespace-nowrap h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all flex items-center gap-1 ${dietFilter === tag ? dietPillActive : dietPillInactive}`}
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   {TAG_ICONS[tag]} {t(labelKey)}
@@ -353,7 +347,7 @@ export default function Carte() {
 
             <div className="py-6 flex flex-col gap-10">
 
-              {/* ── API-driven night sections (COCKTAILS, TAPAS, etc.) ── */}
+              {/* ── API-driven night sections ── */}
               {menuLoading ? (
                 <>
                   <div>
