@@ -160,12 +160,6 @@ export default function Events() {
                     {hero.description}
                   </p>
                 )}
-                <button
-                  className={`mt-3 h-9 px-6 rounded-full text-[12px] uppercase tracking-[0.08em] font-bold text-white ${accentBg}`}
-                  style={{ fontFamily: "'Inter', sans-serif" }}
-                >
-                  {lang === 'en' ? 'Reserve' : 'Réserver'}
-                </button>
               </div>
             </div>
           ) : (
