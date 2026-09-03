@@ -221,9 +221,9 @@ export default function Carte() {
         {/* ─── DAY MODE ─────────────────────────────────────────────── */}
         {!isNight && (
           <div key="day" className="mode-fade-in">
-            {/* Category pills — horizontal scroll on mobile */}
+            {/* Category pills — horizontal scroll on mobile, flex-wrap on desktop */}
             <div className={`sticky top-[118px] z-30 ${headerBg} border-b ${divider}`}>
-              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex overflow-x-auto sm:justify-center gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-start md:justify-center overflow-x-auto md:overflow-visible md:flex-wrap gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {(menuLoading ? ['...'] : [...apiDayCategories, ...(dayGroups['BOISSONS'] ? ['BOISSONS'] : [])]).map(cat => (
                   <button
                     key={cat}
@@ -238,8 +238,8 @@ export default function Carte() {
               </div>
             </div>
 
-            {/* Dietary filter bar — horizontal scroll on mobile */}
-            <div className={`py-2 flex overflow-x-auto sm:justify-center gap-2 border-b ${divider} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
+            {/* Dietary filter bar — horizontal scroll on mobile, flex-wrap on desktop */}
+            <div className={`py-2 flex justify-start md:justify-center overflow-x-auto md:overflow-visible md:flex-wrap gap-2 border-b ${divider} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
               <button
                 onClick={() => setDietFilter(null)}
                 className={`shrink-0 whitespace-nowrap h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all ${!dietFilter ? dietPillActive : dietPillInactive}`}
@@ -307,9 +307,9 @@ export default function Carte() {
         {/* ─── NIGHT MODE ───────────────────────────────────────────── */}
         {isNight && (
           <div key="night" className="mode-fade-in">
-            {/* Category pills — horizontal scroll on mobile */}
+            {/* Category pills — horizontal scroll on mobile, flex-wrap on desktop */}
             <div className={`sticky top-[118px] z-30 ${headerBg} border-b ${divider}`}>
-              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex overflow-x-auto sm:justify-center gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-start md:justify-center overflow-x-auto md:overflow-visible md:flex-wrap gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {(menuLoading ? ['...'] : apiNightCategories).map(cat => (
                   <button
                     key={cat}
@@ -324,8 +324,8 @@ export default function Carte() {
               </div>
             </div>
 
-            {/* Dietary filter bar — horizontal scroll on mobile */}
-            <div className={`py-2 flex overflow-x-auto sm:justify-center gap-2 border-b ${divider} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
+            {/* Dietary filter bar — horizontal scroll on mobile, flex-wrap on desktop */}
+            <div className={`py-2 flex justify-start md:justify-center overflow-x-auto md:overflow-visible md:flex-wrap gap-2 border-b ${divider} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
               <button
                 onClick={() => setDietFilter(null)}
                 className={`shrink-0 whitespace-nowrap h-7 px-3 rounded-full border text-[11px] tracking-[0.03em] transition-all ${!dietFilter ? dietPillActive : dietPillInactive}`}
