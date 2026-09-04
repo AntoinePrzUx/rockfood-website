@@ -19,6 +19,15 @@ interface ApiGalleryItem {
   alt?: string
 }
 
+function formatImageUrl(url?: string): string {
+  if (!url) return ''
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/)
+  if (match && match[1]) {
+    return `https://lh3.googleusercontent.com/d/${match[1]}`
+  }
+  return url
+}
+
 export default function ADN() {
   const { theme } = useTheme()
   const { lang, t } = useLanguage()
@@ -134,7 +143,7 @@ export default function ADN() {
           ) : galleryItems.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {galleryItems.map((item, index) => {
-                const imgSrc = item.image || item.url || ''
+                const imgSrc = formatImageUrl(item.image || item.url)
                 return (
                   <div key={index} className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-black/10 dark:border-white/10">
                     <img
