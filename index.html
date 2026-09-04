@@ -11,16 +11,15 @@
     <!-- Favicon (Onglet Navigateur) -->
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
 
-    <!-- ─── PWA & APP MOBILE (NOUVEAU) ─── -->
+    <!-- PWA & App Mobile -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0A0A0B" />
     
-    <!-- Spécifique iOS (iPhone/iPad) -->
+    <!-- Spécifique iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Rock Food" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
-    <!-- ────────────────────────────────── -->
 
     <!-- Open Graph (Partage Réseaux) -->
     <meta property="og:type" content="website" />
@@ -34,6 +33,52 @@
     <meta name="twitter:title" content="ROCK FOOD | Hossegor" />
     <meta name="twitter:description" content="Good Spot • Bad Habits Since 1990. Bar, restaurant et DJ sets sur la Plage Centrale d'Hossegor." />
     <meta name="twitter:image" content="https://rockfood.vercel.app/og-image.jpg" />
+
+    <!-- Données structurées SEO (Schema.org JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": ["Restaurant", "BarOrPub"],
+      "name": "ROCK FOOD",
+      "image": "https://rockfood.vercel.app/og-image.jpg",
+      "@id": "https://rockfood.vercel.app/#restaurant",
+      "url": "https://rockfood.vercel.app/",
+      "telephone": "+33558434327",
+      "priceRange": "€€",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Plage Centrale",
+        "addressLocality": "Soorts-Hossegor",
+        "postalCode": "40150",
+        "addressCountry": "FR"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 43.6644,
+        "longitude": -1.4422
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ],
+          "opens": "10:00",
+          "closes": "02:00"
+        }
+      ],
+      "sameAs": [
+        "https://www.instagram.com/rockfoodhossegor/",
+        "https://www.facebook.com/profile.php?id=100066395812885"
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
