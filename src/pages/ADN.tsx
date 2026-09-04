@@ -11,7 +11,6 @@ import imgLogo from '../imports/ROCKFOOD_LONDON-2.png'
 
 // ─── API GOOGLE SHEETS GALERIE ────────────────────────────────────────────────
 const GALLERY_API = 'https://opensheet.elk.sh/16Y_1gEeRKrxkdIKhg8uXVJi6K9WoLX4pwUUhemKKC4Q/Galerie'
-const INITIAL_PHOTO_COUNT = 12 // Grille 4x3 sur desktop
 
 interface ApiGalleryItem {
   image?: string
@@ -37,8 +36,15 @@ export default function ADN() {
   // ─── State Galerie & Lightbox ──────────────────────────────────────────────
   const [galleryItems, setGalleryItems] = useState<ApiGalleryItem[]>([])
   const [galleryLoading, setGalleryLoading] = useState(true)
-  const [visibleCount, setVisibleCount] = useState(INITIAL_PHOTO_COUNT)
+  const [visibleCount, setVisibleCount] = useState(12)
   const [selectedImage, setSelectedImage] = useState<{ src: string; caption?: string } | null>(null)
+
+  // Ajustement du nombre initial selon mobile (6) ou PC (12)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      setVisibleCount(6)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -67,6 +73,16 @@ export default function ADN() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  const handleShowMore = () => {
+    const step = window.innerWidth < 640 ? 6 : 12
+    setVisibleCount(prev => prev + step)
+  }
+
+  const handleShowLess = () => {
+    const initial = window.innerWidth < 640 ? 6 : 12
+    setVisibleCount(initial)
+  }
+
   const bg = isNight ? 'bg-[#0A0A0B]' : 'bg-[#F9F9F6]'
   const text = isNight ? 'text-white' : 'text-black'
   const textSub = isNight ? 'text-[#A0A0A0]' : 'text-[#555]'
@@ -79,6 +95,8 @@ export default function ADN() {
   const adnH1 = lang === 'en'
     ? <span className="inline-flex items-center gap-3"><span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}>THE DNA OF</span><img src={imgLogo} alt="Rockfood" className="h-[38px] w-auto object-contain block" style={logoStyle} /></span>
     : <span className="inline-flex items-center gap-3"><span>{"L'ADN"}</span><img src={imgLogo} alt="Rockfood" className="h-[38px] w-auto object-contain block" style={logoStyle} /></span>
+
+  const initialLimit = typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : 12
 
   return (
     <div className={`${bg} min-h-screen transition-colors duration-300`}>
@@ -132,7 +150,7 @@ export default function ADN() {
           </div>
         </div>
 
-        {/* ─── Spotify card (placée avant la galerie) ───────────────────────── */}
+        {/* ─── Spotify card ─────────────────────────────────────────────────── */}
         <div className="flex justify-center w-full my-8">
           <div className="w-full max-w-xl">
             <div className={`rounded-2xl border flex gap-5 p-5 items-center ${cardBg}`}>
@@ -172,7 +190,7 @@ export default function ADN() {
           </div>
         </div>
 
-        {/* ─── Galerie Photo dynamique (Grille 4x3 par défaut) ─────────────── */}
+        {/* ─── Galerie Photo dynamique ───────────────────────────────────────── */}
         <div className="py-10 flex flex-col gap-6">
           <div className="flex flex-col gap-1">
             <h2
@@ -188,7 +206,7 @@ export default function ADN() {
 
           {galleryLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => (
+              {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className={`aspect-square rounded-2xl animate-pulse ${skeletonBg}`} />
               ))}
             </div>
@@ -223,11 +241,11 @@ export default function ADN() {
               </div>
 
               {/* Bouton Voir plus / Voir moins */}
-              {galleryItems.length > INITIAL_PHOTO_COUNT && (
+              {galleryItems.length > initialLimit && (
                 <div className="flex justify-center mt-2">
                   {visibleCount < galleryItems.length ? (
                     <button
-                      onClick={() => setVisibleCount(prev => prev + 12)}
+                      onClick={handleShowMore}
                       className={`h-11 px-8 rounded-full border text-[12px] uppercase tracking-[0.05em] font-bold transition-all ${
                         isNight
                           ? 'bg-[#1E1E24] border-[#2D2D2D] text-white hover:bg-[#FF007A] hover:border-[#FF007A]'
@@ -239,7 +257,7 @@ export default function ADN() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => setVisibleCount(INITIAL_PHOTO_COUNT)}
+                      onClick={handleShowLess}
                       className={`h-11 px-8 rounded-full border text-[12px] uppercase tracking-[0.05em] font-bold transition-all ${
                         isNight
                           ? 'bg-[#1E1E24] border-[#2D2D2D] text-white hover:bg-[#FF007A] hover:border-[#FF007A]'
