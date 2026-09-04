@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useLanguage } from '../context/LanguageContext'
 import { useFetch } from '../hooks/useFetch'
@@ -64,6 +64,8 @@ export default function Landing({ onNavigate }: LandingProps) {
   const { data: eventsData, loading: eventsLoading } = useFetch<RawEvent[]>(EVENTS_API)
   const { data: galleryData, loading: galleryLoading } = useFetch<ApiGalleryItem[]>(GALLERY_API)
 
+  const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0)
+
   const upcomingEvents = useMemo(() => {
     if (!eventsData) return []
     return eventsData.map(resolveEvent).filter(e => e.title).slice(0, 2)
@@ -79,6 +81,15 @@ export default function Landing({ onNavigate }: LandingProps) {
       .filter(item => Boolean(item.src))
   }, [galleryData])
 
+  // Auto-scroll pour la photo unique de la galerie
+  useEffect(() => {
+    if (galleryItems.length <= 1) return
+    const interval = setInterval(() => {
+      setCurrentPhotoIdx(prev => (prev + 1) % galleryItems.length)
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [galleryItems.length])
+
   const bg = isNight ? 'bg-[#0A0A0B]' : 'bg-[#F9F9F6]'
   const text = isNight ? 'text-white' : 'text-black'
   const textSub = isNight ? 'text-[#A0A0A0]' : 'text-[#555]'
@@ -88,6 +99,8 @@ export default function Landing({ onNavigate }: LandingProps) {
   const cardBg = isNight ? 'bg-[#161620] border-[#2D2D2D]' : 'bg-white border-[#E0E0E0]'
   const skeletonBg = isNight ? 'bg-[#1E1E24]' : 'bg-[#E8E8E4]'
   const heroImg = isNight ? imgHeroNight : imgHeroDay
+
+  const currentPhoto = galleryItems[currentPhotoIdx]
 
   return (
     <div className={`${bg} min-h-screen transition-colors duration-300`}>
@@ -211,7 +224,7 @@ export default function Landing({ onNavigate }: LandingProps) {
           )}
         </section>
 
-        {/* Galerie Photo Preview Section */}
+        {/* Galerie Photo Preview Section — Grand visuel automatique */}
         <section className="py-6">
           <div className="mb-4 flex items-center justify-between">
             <h2
@@ -230,30 +243,34 @@ export default function Landing({ onNavigate }: LandingProps) {
           </div>
 
           {galleryLoading ? (
-            <div className="flex gap-4 overflow-hidden py-1">
-              {[0, 1, 2, 3].map(i => (
-                <div key={i} className={`shrink-0 w-[200px] sm:w-[240px] h-[200px] sm:h-[240px] rounded-[12px] animate-pulse ${skeletonBg}`} />
-              ))}
-            </div>
+            <div className={`w-full h-[280px] sm:h-[400px] rounded-[12px] animate-pulse ${skeletonBg}`} />
           ) : galleryItems.length === 0 ? null : (
             <div
               onClick={() => onNavigate('adn')}
-              className="group cursor-pointer relative overflow-hidden"
+              className="group cursor-pointer relative h-[280px] sm:h-[400px] rounded-[12px] overflow-hidden border border-black/10 dark:border-white/10"
             >
-              <div className="flex gap-4 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                {galleryItems.slice(0, 8).map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="shrink-0 w-[200px] sm:w-[240px] h-[200px] sm:h-[240px] rounded-[12px] overflow-hidden border border-black/10 dark:border-white/10 snap-start transition-transform duration-300 group-hover:scale-[1.01]"
-                  >
-                    <img
-                      src={item.src}
-                      alt={item.caption || `Rock Food photo ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
+              <img
+                key={currentPhotoIdx}
+                src={currentPhoto.src}
+                alt={currentPhoto.caption || 'Rock Food Galerie'}
+                className="w-full h-full object-cover transition-all duration-700 ease-in-out group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
+                <p className="text-[13px] font-medium drop-shadow" style={{ fontFamily: "'Inter', sans-serif" }}>
+                  {currentPhoto.caption || (lang === 'en' ? 'Click to explore full gallery' : 'Cliquer pour explorer la galerie')}
+                </p>
+                <div className="flex gap-1.5">
+                  {galleryItems.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        idx === currentPhotoIdx ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
+                      }`}
                     />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
