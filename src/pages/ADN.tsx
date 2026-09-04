@@ -11,6 +11,7 @@ import imgLogo from '../imports/ROCKFOOD_LONDON-2.png'
 
 // ─── API GOOGLE SHEETS GALERIE ────────────────────────────────────────────────
 const GALLERY_API = 'https://opensheet.elk.sh/16Y_1gEeRKrxkdIKhg8uXVJi6K9WoLX4pwUUhemKKC4Q/Galerie'
+const INITIAL_PHOTO_COUNT = 12 // Grille 4x3 sur desktop
 
 interface ApiGalleryItem {
   image?: string
@@ -36,6 +37,7 @@ export default function ADN() {
   // ─── State Galerie & Lightbox ──────────────────────────────────────────────
   const [galleryItems, setGalleryItems] = useState<ApiGalleryItem[]>([])
   const [galleryLoading, setGalleryLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(INITIAL_PHOTO_COUNT)
   const [selectedImage, setSelectedImage] = useState<{ src: string; caption?: string } | null>(null)
 
   useEffect(() => {
@@ -130,58 +132,7 @@ export default function ADN() {
           </div>
         </div>
 
-        {/* ─── Galerie Photo dynamique ───────────────────────────────────────── */}
-        <div className="py-10 flex flex-col gap-6">
-          <div className="flex flex-col gap-1">
-            <h2
-              className={`text-[24px] lg:text-[32px] uppercase leading-[1.1] ${text}`}
-              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
-            >
-              {lang === 'en' ? 'PHOTO GALLERY' : 'GALERIE PHOTO'}
-            </h2>
-            <p className={`text-[13px] ${textSub}`} style={{ fontFamily: "'Inter', sans-serif" }}>
-              {lang === 'en' ? 'Moments captured at Rock Food' : 'Les instants capturés au Rock Food'}
-            </p>
-          </div>
-
-          {galleryLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                <div key={i} className={`aspect-square rounded-2xl animate-pulse ${skeletonBg}`} />
-              ))}
-            </div>
-          ) : galleryItems.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {galleryItems.map((item, index) => {
-                const imgSrc = formatImageUrl(item.image || item.url)
-                const caption = item.caption || item.alt || ''
-                return (
-                  <div
-                    key={index}
-                    onClick={() => setSelectedImage({ src: imgSrc, caption })}
-                    className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-black/10 dark:border-white/10 cursor-pointer"
-                  >
-                    <img
-                      src={imgSrc}
-                      alt={caption || `Rock Food photo ${index + 1}`}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    {caption && (
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end p-3">
-                        <p className="text-white text-[12px] font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {caption}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          ) : null}
-        </div>
-
-        {/* ─── Spotify card ─────────────────────────────────────────────────── */}
+        {/* ─── Spotify card (placée avant la galerie) ───────────────────────── */}
         <div className="flex justify-center w-full my-8">
           <div className="w-full max-w-xl">
             <div className={`rounded-2xl border flex gap-5 p-5 items-center ${cardBg}`}>
@@ -219,6 +170,90 @@ export default function ADN() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ─── Galerie Photo dynamique (Grille 4x3 par défaut) ─────────────── */}
+        <div className="py-10 flex flex-col gap-6">
+          <div className="flex flex-col gap-1">
+            <h2
+              className={`text-[24px] lg:text-[32px] uppercase leading-[1.1] ${text}`}
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
+            >
+              {lang === 'en' ? 'PHOTO GALLERY' : 'GALERIE PHOTO'}
+            </h2>
+            <p className={`text-[13px] ${textSub}`} style={{ fontFamily: "'Inter', sans-serif" }}>
+              {lang === 'en' ? 'Moments captured at Rock Food' : 'Les instants capturés au Rock Food'}
+            </p>
+          </div>
+
+          {galleryLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => (
+                <div key={i} className={`aspect-square rounded-2xl animate-pulse ${skeletonBg}`} />
+              ))}
+            </div>
+          ) : galleryItems.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                {galleryItems.slice(0, visibleCount).map((item, index) => {
+                  const imgSrc = formatImageUrl(item.image || item.url)
+                  const caption = item.caption || item.alt || ''
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => setSelectedImage({ src: imgSrc, caption })}
+                      className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-black/10 dark:border-white/10 cursor-pointer"
+                    >
+                      <img
+                        src={imgSrc}
+                        alt={caption || `Rock Food photo ${index + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      {caption && (
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end p-3">
+                          <p className="text-white text-[12px] font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {caption}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Bouton Voir plus / Voir moins */}
+              {galleryItems.length > INITIAL_PHOTO_COUNT && (
+                <div className="flex justify-center mt-2">
+                  {visibleCount < galleryItems.length ? (
+                    <button
+                      onClick={() => setVisibleCount(prev => prev + 12)}
+                      className={`h-11 px-8 rounded-full border text-[12px] uppercase tracking-[0.05em] font-bold transition-all ${
+                        isNight
+                          ? 'bg-[#1E1E24] border-[#2D2D2D] text-white hover:bg-[#FF007A] hover:border-[#FF007A]'
+                          : 'bg-white border-[#111] text-black hover:bg-[#111] hover:text-white'
+                      }`}
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      {lang === 'en' ? 'Show more photos' : 'Voir plus de photos'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setVisibleCount(INITIAL_PHOTO_COUNT)}
+                      className={`h-11 px-8 rounded-full border text-[12px] uppercase tracking-[0.05em] font-bold transition-all ${
+                        isNight
+                          ? 'bg-[#1E1E24] border-[#2D2D2D] text-white hover:bg-[#FF007A] hover:border-[#FF007A]'
+                          : 'bg-white border-[#111] text-black hover:bg-[#111] hover:text-white'
+                      }`}
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      {lang === 'en' ? 'Show less' : 'Voir moins'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : null}
         </div>
 
       </div>
