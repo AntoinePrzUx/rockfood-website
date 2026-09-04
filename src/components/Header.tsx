@@ -4,13 +4,102 @@ import { useLanguage } from '../context/LanguageContext'
 import { IconMenu, IconSun, IconMoon } from './Icons'
 import imgLogo from '../imports/ROCKFOOD_LONDON-2.png'
 
-function useIsOpen() {
-  const check = () => { const h = new Date().getHours(); return h >= 10 || h < 2 }
-  const [isOpen, setIsOpen] = useState(check)
+const HORAIRES_API = 'https://opensheet.elk.sh/16Y_1gEeRKrxkdIKhg8uXVJi6K9WoLX4pwUUhemKKC4Q/Horaires'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SheetRow = Record<string, any>
+
+function useStoreStatus() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [schedule, setSchedule] = useState<SheetRow[] | 'ERROR' | null>(null)
+
+  // 1. Récupérer les horaires depuis Google Sheets au chargement
   useEffect(() => {
-    const id = setInterval(() => setIsOpen(check()), 60_000)
-    return () => clearInterval(id)
+    fetch(HORAIRES_API)
+      .then(r => r.json())
+      .then(data => setSchedule(data))
+      .catch(() => setSchedule('ERROR'))
   }, [])
+
+  // 2. Vérifier l'heure exacte chaque minute
+  useEffect(() => {
+    const check = () => {
+      try {
+        const parts = new Intl.DateTimeFormat('fr-FR', {
+          timeZone: 'Europe/Paris',
+          hour: 'numeric',
+          minute: 'numeric',
+          weekday: 'long',
+          hourCycle: 'h23'
+        }).formatToParts(new Date())
+
+        let weekday = ''
+        let hour = 0
+        let minute = 0
+
+        for (const part of parts) {
+          if (part.type === 'weekday') weekday = part.value.toLowerCase()
+          if (part.type === 'hour') hour = parseInt(part.value, 10)
+          if (part.type === 'minute') minute = parseInt(part.value, 10)
+        }
+
+        // Si on est avant 6h du matin, on compte encore pour la "journée métier" de la veille
+        let businessWeekday = weekday
+        let businessHour = hour
+        if (hour < 6) {
+          businessHour += 24
+          const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
+          const currentIdx = days.indexOf(weekday)
+          businessWeekday = currentIdx === 0 ? 'samedi' : days[currentIdx - 1]
+        }
+
+        const currentTime = businessHour + (minute / 60)
+
+        // FALLBACK : Si Google Sheet ne répond pas, on applique 10h - 02h du matin
+        if (schedule === 'ERROR' || !schedule) {
+          setIsOpen(businessHour >= 10 && businessHour < 26)
+          return
+        }
+
+        // Chercher la règle du jour dans le Google Sheet
+        const todayRule = schedule.find(r => r.Jour?.trim().toLowerCase() === businessWeekday)
+        
+        // Si la case Ouverture contient "Fermé"
+        if (!todayRule || !todayRule.Ouverture || todayRule.Ouverture.toUpperCase().includes('FERM')) {
+          setIsOpen(false)
+          return
+        }
+
+        // Convertir "10:00" ou "10h30" en nombre décimal (10.5)
+        const parseTime = (tString: string) => {
+          const p = String(tString).replace(/[hH]/, ':').split(':')
+          const h = parseInt(p[0], 10) || 0
+          const m = parseInt(p[1], 10) || 0
+          return h + (m / 60)
+        }
+
+        const openTime = parseTime(todayRule.Ouverture)
+        let closeTime = parseTime(todayRule.Fermeture)
+        
+        // Si ça ferme après minuit (ex: 02:00), on ajoute 24h pour le calcul
+        if (closeTime <= openTime) {
+          closeTime += 24 
+        }
+
+        setIsOpen(currentTime >= openTime && currentTime < closeTime)
+
+      } catch (e) {
+        // ULTIMATE FALLBACK en cas d'erreur navigateur
+        const h = new Date().getHours()
+        setIsOpen(h >= 10 || h < 2)
+      }
+    }
+
+    check() // Vérification immédiate
+    const id = setInterval(check, 60_000) // Puis toutes les minutes
+    return () => clearInterval(id)
+  }, [schedule])
+
   return isOpen
 }
 
@@ -25,7 +114,7 @@ export default function Header({ onMenuOpen, onNavigate }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const { lang, setLang, t } = useLanguage()
   const isNight = theme === 'night'
-  const isOpen = useIsOpen()
+  const isOpen = useStoreStatus()
 
   const bg = isNight ? 'bg-[#0A0A0B]' : 'bg-[#F9F9F6]'
   const textColor = isNight ? 'text-white' : 'text-black'
@@ -60,7 +149,7 @@ export default function Header({ onMenuOpen, onNavigate }: HeaderProps) {
         <div className="flex items-center gap-3">
           {/* Live status */}
           <div className="flex items-center gap-1.5">
-            <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${isOpen ? 'bg-[#00FF66] live-dot' : 'bg-[#FF3B30]'}`} />
+            <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${isOpen ? 'bg-[#00FF66] live-dot animate-pulse' : 'bg-[#FF3B30]'}`} />
             <span
               className={`text-[10px] uppercase leading-none ${isOpen ? textColor : 'text-[#A0A0A0]'}`}
               style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 500 }}
