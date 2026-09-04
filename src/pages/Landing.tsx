@@ -8,6 +8,7 @@ import imgLogo from '../imports/ROCKFOOD_LONDON-2.png'
 import imgHeroNight from '../imports/LandingPageNight/47d76d21e4bdf74c3e2dc0065a176be500964705.png'
 
 const EVENTS_API = 'https://opensheet.elk.sh/16Y_1gEeRKrxkdIKhg8uXVJi6K9WoLX4pwUUhemKKC4Q/Flux_Figma'
+const GALLERY_API = 'https://opensheet.elk.sh/16Y_1gEeRKrxkdIKhg8uXVJi6K9WoLX4pwUUhemKKC4Q/Galerie'
 
 const PLACEHOLDER_BG = 'linear-gradient(160deg, #1a1a2e 0%, #0d0d14 60%, #1a0a0a 100%)'
 
@@ -21,8 +22,23 @@ interface EventItem {
   imageUrl: string | null
 }
 
+interface ApiGalleryItem {
+  image?: string
+  url?: string
+  caption?: string
+  alt?: string
+}
+
+function formatImageUrl(url?: string): string {
+  if (!url) return ''
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/)
+  if (match && match[1]) {
+    return `https://lh3.googleusercontent.com/d/${match[1]}`
+  }
+  return url
+}
+
 function resolveEvent(raw: RawEvent): EventItem {
-  // Sheet column headers have surrounding spaces — trim all keys before lookup
   const r: RawEvent = {}
   for (const k of Object.keys(raw)) r[k.trim()] = typeof raw[k] === 'string' ? raw[k].trim() : raw[k]
 
@@ -46,11 +62,22 @@ export default function Landing({ onNavigate }: LandingProps) {
   const isNight = theme === 'night'
 
   const { data: eventsData, loading: eventsLoading } = useFetch<RawEvent[]>(EVENTS_API)
+  const { data: galleryData, loading: galleryLoading } = useFetch<ApiGalleryItem[]>(GALLERY_API)
 
   const upcomingEvents = useMemo(() => {
     if (!eventsData) return []
     return eventsData.map(resolveEvent).filter(e => e.title).slice(0, 2)
   }, [eventsData])
+
+  const galleryItems = useMemo(() => {
+    if (!galleryData) return []
+    return galleryData
+      .map(item => ({
+        src: formatImageUrl(item.image || item.url),
+        caption: item.caption || item.alt || '',
+      }))
+      .filter(item => Boolean(item.src))
+  }, [galleryData])
 
   const bg = isNight ? 'bg-[#0A0A0B]' : 'bg-[#F9F9F6]'
   const text = isNight ? 'text-white' : 'text-black'
@@ -59,6 +86,7 @@ export default function Landing({ onNavigate }: LandingProps) {
   const accentBg = isNight ? 'bg-[#FF007A] neon-badge' : 'bg-[#111]'
   const accentGlow = isNight ? 'shadow-[0_0_6px_rgba(255,0,122,0.4)]' : ''
   const cardBg = isNight ? 'bg-[#161620] border-[#2D2D2D]' : 'bg-white border-[#E0E0E0]'
+  const skeletonBg = isNight ? 'bg-[#1E1E24]' : 'bg-[#E8E8E4]'
   const heroImg = isNight ? imgHeroNight : imgHeroDay
 
   return (
@@ -179,6 +207,54 @@ export default function Landing({ onNavigate }: LandingProps) {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </section>
+
+        {/* Galerie Photo Preview Section */}
+        <section className="py-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2
+              className={`text-[20px] lg:text-[26px] uppercase leading-[1.1] ${text}`}
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 500 }}
+            >
+              {lang === 'en' ? 'PHOTO GALLERY' : 'GALERIE PHOTO'}
+            </h2>
+            <button
+              onClick={() => onNavigate('adn')}
+              className={`text-[11px] uppercase tracking-[0.05em] underline underline-offset-2 ${isNight ? 'text-[#FF007A]' : 'text-[#555]'}`}
+              style={{ fontFamily: "'Inter', sans-serif" }}
+            >
+              {lang === 'en' ? 'SEE FULL GALLERY' : 'DÉCOUVRIR LA GALERIE'}
+            </button>
+          </div>
+
+          {galleryLoading ? (
+            <div className="flex gap-4 overflow-hidden py-1">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className={`shrink-0 w-[200px] sm:w-[240px] h-[200px] sm:h-[240px] rounded-[12px] animate-pulse ${skeletonBg}`} />
+              ))}
+            </div>
+          ) : galleryItems.length === 0 ? null : (
+            <div
+              onClick={() => onNavigate('adn')}
+              className="group cursor-pointer relative overflow-hidden"
+            >
+              <div className="flex gap-4 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {galleryItems.slice(0, 8).map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="shrink-0 w-[200px] sm:w-[240px] h-[200px] sm:h-[240px] rounded-[12px] overflow-hidden border border-black/10 dark:border-white/10 snap-start transition-transform duration-300 group-hover:scale-[1.01]"
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.caption || `Rock Food photo ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </section>
