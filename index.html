@@ -2,16 +2,27 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- Titre & Description de base -->
+    <!-- Titre & Description -->
     <title>ROCK FOOD | Hossegor — Bar, Resto & Events</title>
     <meta name="description" content="Good Spot • Bad Habits Since 1990. Bar, restaurant et DJ sets sur la Plage Centrale d'Hossegor." />
 
-    <!-- Favicon personnalisé (JPG) -->
+    <!-- Favicon (Onglet Navigateur) -->
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
 
-    <!-- Open Graph (WhatsApp, iMessage, Facebook, LinkedIn, Instagram) -->
+    <!-- ─── PWA & APP MOBILE (NOUVEAU) ─── -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0A0A0B" />
+    
+    <!-- Spécifique iOS (iPhone/iPad) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Rock Food" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- ────────────────────────────────── -->
+
+    <!-- Open Graph (Partage Réseaux) -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://rockfood.vercel.app/" />
     <meta property="og:title" content="ROCK FOOD | Hossegor" />
