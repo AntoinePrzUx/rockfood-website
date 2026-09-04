@@ -33,9 +33,10 @@ export default function ADN() {
   const { lang, t } = useLanguage()
   const isNight = theme === 'night'
 
-  // ─── State Galerie ─────────────────────────────────────────────────────────
+  // ─── State Galerie & Lightbox ──────────────────────────────────────────────
   const [galleryItems, setGalleryItems] = useState<ApiGalleryItem[]>([])
   const [galleryLoading, setGalleryLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState<{ src: string; caption?: string } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -53,6 +54,15 @@ export default function ADN() {
         if (!cancelled) setGalleryLoading(false)
       })
     return () => { cancelled = true }
+  }, [])
+
+  // Fermer la photo avec la touche Échap
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedImage(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   const bg = isNight ? 'bg-[#0A0A0B]' : 'bg-[#F9F9F6]'
@@ -144,18 +154,23 @@ export default function ADN() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {galleryItems.map((item, index) => {
                 const imgSrc = formatImageUrl(item.image || item.url)
+                const caption = item.caption || item.alt || ''
                 return (
-                  <div key={index} className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-black/10 dark:border-white/10">
+                  <div
+                    key={index}
+                    onClick={() => setSelectedImage({ src: imgSrc, caption })}
+                    className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-black/10 dark:border-white/10 cursor-pointer"
+                  >
                     <img
                       src={imgSrc}
-                      alt={item.caption || item.alt || `Rock Food photo ${index + 1}`}
+                      alt={caption || `Rock Food photo ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
                     />
-                    {item.caption && (
+                    {caption && (
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end p-3">
                         <p className="text-white text-[12px] font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {item.caption}
+                          {caption}
                         </p>
                       </div>
                     )}
@@ -207,6 +222,38 @@ export default function ADN() {
         </div>
 
       </div>
+
+      {/* ─── Modal Aperçu Photo Taille Réelle (Lightbox) ──────────────────── */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="absolute top-5 right-5 text-white/80 hover:text-white bg-black/40 hover:bg-black/70 rounded-full w-10 h-10 flex items-center justify-center text-xl transition-all z-10"
+            aria-label="Fermer"
+          >
+            ✕
+          </button>
+
+          <div
+            className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <img
+              src={selectedImage.src}
+              alt={selectedImage.caption || 'Aperçu photo'}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            />
+            {selectedImage.caption && (
+              <p className="mt-3 text-white/90 text-[14px] text-center font-medium bg-black/60 px-4 py-1.5 rounded-full" style={{ fontFamily: "'Inter', sans-serif" }}>
+                {selectedImage.caption}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
