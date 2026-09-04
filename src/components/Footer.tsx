@@ -284,7 +284,30 @@ export default function Footer() {
           </p>
         </div>
       </LegalSheet>
+{/* ─── BARRE D'ACTION MOBILE (Visible uniquement sur téléphone) ─── */}
+<div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#0A0A0B]/95 backdrop-blur-md border-t border-gray-200 dark:border-[#2D2D2D] z-50 flex items-center justify-between pb-safe">
+  
+  {/* Bouton Appeler */}
+  <a 
+    href="tel:+33558419600" 
+    className="flex-1 flex justify-center items-center gap-2 py-4 border-r border-gray-200 dark:border-[#2D2D2D] text-black dark:text-white"
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+    <span className="text-[12px] uppercase font-bold" style={{ fontFamily: "'Inter', sans-serif" }}>Appeler</span>
+  </a>
 
+  {/* Bouton S'y rendre (Maps) */}
+  <a 
+    href="https://www.google.com/maps/search/?api=1&query=Rockfood+Plage+Centrale+40150+Soorts-Hossegor" 
+    target="_blank" 
+    rel="noreferrer" 
+    className="flex-1 flex justify-center items-center gap-2 py-4 text-black dark:text-white"
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+    <span className="text-[12px] uppercase font-bold" style={{ fontFamily: "'Inter', sans-serif" }}>S'y rendre</span>
+  </a>
+
+</div>
     </footer>
   )
 }
