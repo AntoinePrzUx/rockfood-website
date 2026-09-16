@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ThemeProvider } from './context/ThemeContext'
 import { LanguageProvider } from './context/LanguageContext'
 import Header from './components/Header'
@@ -17,10 +17,36 @@ function AppInner() {
   const [page, setPage] = useState<Page>('landing')
   const [menuOpen, setMenuOpen] = useState(false)
 
+  // Navigation dynamique avec enregistrement dans l'historique du navigateur
   const navigate = (p: Page) => {
     setPage(p)
     window.scrollTo({ top: 0, behavior: 'instant' })
+    const url = p === 'landing' ? '/' : `/#${p}`
+    window.history.pushState({ page: p }, '', url)
   }
+
+  // Écoute des événements du bouton "Retour" / "Avancer"
+  useEffect(() => {
+    const validPages: Page[] = ['landing', 'carte', 'adn', 'contact', 'events']
+    const hash = window.location.hash.replace('#', '') as Page
+    const initialPage = validPages.includes(hash) ? hash : 'landing'
+
+    setPage(initialPage)
+    window.history.replaceState({ page: initialPage }, '', initialPage === 'landing' ? '/' : `/#${initialPage}`)
+
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.page) {
+        setPage(event.state.page)
+      } else {
+        const currentHash = window.location.hash.replace('#', '') as Page
+        setPage(validPages.includes(currentHash) ? currentHash : 'landing')
+      }
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   return (
     <>
