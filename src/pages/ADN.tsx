@@ -9,23 +9,13 @@ import imgPhoto2 from '../imports/AdnDay/9e0dbdef13a88ede7a71b57b9ad77270cc4b86a
 import imgLogoBadge from '../imports/AdnDay/0e4e19e0e18de5fc2ef21befef5fa15993a2b572.png'
 import imgLogo from '../imports/ROCKFOOD_LONDON-2.png'
 
-// ─── API GOOGLE SHEETS GALERIE ────────────────────────────────────────────────
-const GALLERY_API = 'https://opensheet.elk.sh/16Y_1gEeRKrxkdIKhg8uXVJi6K9WoLX4pwUUhemKKC4Q/Galerie'
+// ─── API GOOGLE DRIVE GALERIE (Google Apps Script) ──────────────────────────
+// Remplace par l'URL d'exécution obtenue lors du déploiement de ton script
+const DRIVE_GALLERY_API = 'https://script.google.com/macros/s/VOTRE_SCRIPT_ID/exec'
 
-interface ApiGalleryItem {
-  image?: string
-  url?: string
-  caption?: string
-  alt?: string
-}
-
-function formatImageUrl(url?: string): string {
-  if (!url) return ''
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/)
-  if (match && match[1]) {
-    return `https://lh3.googleusercontent.com/d/${match[1]}`
-  }
-  return url
+interface DriveImageItem {
+  id: string
+  url: string
 }
 
 export default function ADN() {
@@ -34,10 +24,10 @@ export default function ADN() {
   const isNight = theme === 'night'
 
   // ─── State Galerie & Lightbox ──────────────────────────────────────────────
-  const [galleryItems, setGalleryItems] = useState<ApiGalleryItem[]>([])
+  const [galleryItems, setGalleryItems] = useState<DriveImageItem[]>([])
   const [galleryLoading, setGalleryLoading] = useState(true)
   const [visibleCount, setVisibleCount] = useState(12)
-  const [selectedImage, setSelectedImage] = useState<{ src: string; caption?: string } | null>(null)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   // Ajustement du nombre initial selon mobile (6) ou PC (12)
   useEffect(() => {
@@ -49,12 +39,11 @@ export default function ADN() {
   useEffect(() => {
     let cancelled = false
     setGalleryLoading(true)
-    fetch(GALLERY_API)
+    fetch(DRIVE_GALLERY_API)
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then((d: ApiGalleryItem[]) => {
+      .then((d: DriveImageItem[]) => {
         if (!cancelled) {
-          const valid = (d || []).filter(item => Boolean(item.image || item.url))
-          setGalleryItems(valid)
+          setGalleryItems(d || [])
           setGalleryLoading(false)
         }
       })
@@ -213,31 +202,20 @@ export default function ADN() {
           ) : galleryItems.length > 0 ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                {galleryItems.slice(0, visibleCount).map((item, index) => {
-                  const imgSrc = formatImageUrl(item.image || item.url)
-                  const caption = item.caption || item.alt || ''
-                  return (
-                    <div
-                      key={index}
-                      onClick={() => setSelectedImage({ src: imgSrc, caption })}
-                      className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-black/10 dark:border-white/10 cursor-pointer"
-                    >
-                      <img
-                        src={imgSrc}
-                        alt={caption || `Rock Food photo ${index + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      {caption && (
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end p-3">
-                          <p className="text-white text-[12px] font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                            {caption}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                {galleryItems.slice(0, visibleCount).map((item, index) => (
+                  <div
+                    key={item.id || index}
+                    onClick={() => setSelectedImage(item.url)}
+                    className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-black/10 dark:border-white/10 cursor-pointer"
+                  >
+                    <img
+                      src={item.url}
+                      alt={`Rock Food photo ${index + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
               </div>
 
               {/* Bouton Voir plus / Voir moins */}
@@ -295,15 +273,10 @@ export default function ADN() {
             onClick={e => e.stopPropagation()}
           >
             <img
-              src={selectedImage.src}
-              alt={selectedImage.caption || 'Aperçu photo'}
+              src={selectedImage}
+              alt="Aperçu photo"
               className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
             />
-            {selectedImage.caption && (
-              <p className="mt-3 text-white/90 text-[14px] text-center font-medium bg-black/60 px-4 py-1.5 rounded-full" style={{ fontFamily: "'Inter', sans-serif" }}>
-                {selectedImage.caption}
-              </p>
-            )}
           </div>
         </div>
       )}
