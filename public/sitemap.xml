@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://rockfood.vercel.app/</loc>
+    <loc>https://rockfoodhossegor.fr/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://rockfood.vercel.app/carte</loc>
+    <loc>https://rockfoodhossegor.fr/carte</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rockfood.vercel.app/events</loc>
+    <loc>https://rockfoodhossegor.fr/events</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rockfood.vercel.app/adn</loc>
+    <loc>https://rockfoodhossegor.fr/adn</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://rockfood.vercel.app/contact</loc>
+    <loc>https://rockfoodhossegor.fr/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
