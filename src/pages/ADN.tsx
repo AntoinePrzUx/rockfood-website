@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useLanguage } from '../context/LanguageContext'
 import Footer from '../components/Footer'
-import { IconPlay } from '../components/Icons'
 import imgHero from '../imports/AdnDay/4e6d95808eb0a4831dbbf04d923a2780e4638e96.png'
 import imgPhoto1 from '../imports/AdnDay/75dfd56a73ee02bd9f2bc46d4fc2af40c8c6cb5e.png'
 import imgPhoto2 from '../imports/AdnDay/9e0dbdef13a88ede7a71b57b9ad77270cc4b86a8.png'
-import imgLogoBadge from '../imports/AdnDay/0e4e19e0e18de5fc2ef21befef5fa15993a2b572.png'
 import imgLogo from '../imports/ROCKFOOD_LONDON-2.png'
 
 // ─── API GOOGLE SHEETS GALERIE ────────────────────────────────────────────────
@@ -86,7 +84,6 @@ export default function ADN() {
   const bg = isNight ? 'bg-[#0A0A0B]' : 'bg-[#F9F9F6]'
   const text = isNight ? 'text-white' : 'text-black'
   const textSub = isNight ? 'text-[#A0A0A0]' : 'text-[#555]'
-  const cardBg = isNight ? 'bg-[#1E1E24] border-[#2D2D2D] neon-card' : 'bg-white border-[#111]'
   const skeletonBg = isNight ? 'bg-[#1E1E24]' : 'bg-[#E8E8E4]'
 
   const logoStyle: React.CSSProperties = isNight
@@ -150,12 +147,18 @@ export default function ADN() {
           </div>
         </div>
 
-        {/* ─── Spotify Player (Iframe Embed) ─────────────────────────────────── */}
+        {/* ─── Spotify Player habillé aux couleurs de la charte ─── */}
         <div className="flex justify-center w-full my-8">
-          <div className="w-full max-w-xl rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 shadow-lg">
+          <div 
+            className={`w-full max-w-xl rounded-2xl p-1 transition-all ${
+              isNight 
+                ? 'bg-[#1E1E24] border border-[#FF007A]/30 shadow-[0_0_20px_rgba(255,0,122,0.15)]' 
+                : 'bg-white border border-black/10 shadow-md'
+            }`}
+          >
             <iframe
               style={{ borderRadius: '12px' }}
-              src="https://open.spotify.com/embed/playlist/3FiBgkwPedjGFT0oSlQAFC?utm_source=generator"
+              src="https://open.spotify.com/embed/playlist/3FiBgkwPedjGFT0oSlQAFC?utm_source=generator&theme=0"
               width="100%"
               height="152"
               frameBorder="0"
@@ -257,35 +260,4 @@ export default function ADN() {
       {selectedImage && (
         <div
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
-        >
-          <button
-            onClick={() => setSelectedImage(null)}
-            className="absolute top-5 right-5 text-white/80 hover:text-white bg-black/40 hover:bg-black/70 rounded-full w-10 h-10 flex items-center justify-center text-xl transition-all z-10"
-            aria-label="Fermer"
-          >
-            ✕
-          </button>
-
-          <div
-            className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center"
-            onClick={e => e.stopPropagation()}
-          >
-            <img
-              src={selectedImage.src}
-              alt={selectedImage.caption || 'Aperçu photo'}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-            />
-            {selectedImage.caption && (
-              <p className="mt-3 text-white/90 text-[14px] text-center font-medium bg-black/60 px-4 py-1.5 rounded-full" style={{ fontFamily: "'Inter', sans-serif" }}>
-                {selectedImage.caption}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      <Footer />
-    </div>
-  )
-}
+          onClick={() => setSelected
