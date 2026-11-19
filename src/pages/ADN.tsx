@@ -158,7 +158,7 @@ export default function ADN() {
           >
             <iframe
               style={{ borderRadius: '12px' }}
-              src="https://open.spotify.com/embed/playlist/3FiBgkwPedjGFT0oSlQAFC?utm_source=generator&theme=0"
+              src="https://open.spotify.com/embed/playlist/2p11TD1Whh2682DId20ciN?utm_source=generator&theme=0"
               width="100%"
               height="152"
               frameBorder="0"
