@@ -30,13 +30,6 @@ interface ApiGalleryItem {
   type?: string
 }
 
-interface GalleryPreviewItem {
-  rawUrl: string
-  thumbSrc: string
-  caption: string
-  isVideo: boolean
-}
-
 function formatImageUrl(url?: string): string {
   if (!url) return ''
   const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/)
@@ -46,42 +39,22 @@ function formatImageUrl(url?: string): string {
   return url
 }
 
-function isVideoUrl(url: string, type?: string): boolean {
-  if (type?.trim().toLowerCase() === 'video') return true
-  return /(?:youtube\.com|youtu\.be)|\.(?:mp4|webm|mov)(?:\?|$)/i.test(url)
-}
-
-function getVideoThumbnail(url: string): string {
+function getVideoEmbedUrl(url: string): string {
+  // YouTube : lecture automatique muette en boucle pour l'aperçu
   const ytMatch = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/)
   if (ytMatch && ytMatch[1]) {
-    return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`
-  }
-  return formatImageUrl(url)
-}
-
-function getVideoPreviewSource(url: string): { kind: 'video' | 'iframe'; src: string } {
-  // Fichier vidéo direct (.mp4, .webm, .mov)
-  if (/\.(?:mp4|webm|mov)(?:\?|$)/i.test(url)) {
-    return { kind: 'video', src: url }
-  }
-  // YouTube (lecture auto muette en boucle sans contrôles)
-  const ytMatch = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/)
-  if (ytMatch && ytMatch[1]) {
-    const id = ytMatch[1]
-    return {
-      kind: 'iframe',
-      src: `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&rel=0&playsinline=1`,
-    }
+    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${ytMatch[1]}&controls=0&modestbranding=1&rel=0`
   }
   // Google Drive
   const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/)
   if (driveMatch && driveMatch[1]) {
-    return {
-      kind: 'iframe',
-      src: `https://drive.google.com/file/d/${driveMatch[1]}/preview`,
-    }
+    return `https://drive.google.com/file/d/${driveMatch[1]}/preview`
   }
-  return { kind: 'iframe', src: url }
+  return url
+}
+
+function isDirectVideoFile(url: string): boolean {
+  return /\.(mp4|webm|mov)(\?.*)?$/i.test(url)
 }
 
 function resolveEvent(raw: RawEvent): EventItem {
@@ -117,15 +90,15 @@ export default function Landing({ onNavigate }: LandingProps) {
     return eventsData.map(resolveEvent).filter(e => e.title).slice(0, 2)
   }, [eventsData])
 
-  const galleryItems = useMemo<GalleryPreviewItem[]>(() => {
+  const galleryItems = useMemo(() => {
     if (!galleryData) return []
     return galleryData
       .map(item => {
         const rawUrl = (item.image || item.url || '').trim()
-        const isVideo = isVideoUrl(rawUrl, item.type)
+        const isVideo = item.type?.toLowerCase().trim() === 'video'
         return {
           rawUrl,
-          thumbSrc: isVideo ? getVideoThumbnail(rawUrl) : formatImageUrl(rawUrl),
+          src: formatImageUrl(rawUrl),
           caption: item.caption || item.alt || '',
           isVideo,
         }
@@ -133,18 +106,27 @@ export default function Landing({ onNavigate }: LandingProps) {
       .filter(item => Boolean(item.rawUrl))
   }, [galleryData])
 
-  // Auto-scroll adaptatif : 8s pour laisser jouer un aperçu vidéo, 3.5s pour une photo
+  const safeIdx = galleryItems.length > 0 ? currentPhotoIdx % galleryItems.length : 0
+  const currentMedia = galleryItems[safeIdx]
+
+  // Auto-scroll uniquement sur les photos (se met en pause sur les vidéos)
   useEffect(() => {
-    if (galleryItems.length <= 1) return
-    const currentItem = galleryItems[currentPhotoIdx % galleryItems.length]
-    const delay = currentItem?.isVideo ? 8000 : 3500
-
-    const timer = setTimeout(() => {
+    if (galleryItems.length <= 1 || currentMedia?.isVideo) return
+    const interval = setInterval(() => {
       setCurrentPhotoIdx(prev => (prev + 1) % galleryItems.length)
-    }, delay)
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [galleryItems.length, currentMedia?.isVideo])
 
-    return () => clearTimeout(timer)
-  }, [currentPhotoIdx, galleryItems])
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCurrentPhotoIdx(prev => (prev - 1 + galleryItems.length) % galleryItems.length)
+  }
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCurrentPhotoIdx(prev => (prev + 1) % galleryItems.length)
+  }
 
   const bg = isNight ? 'bg-[#0A0A0B]' : 'bg-[#F9F9F6]'
   const text = isNight ? 'text-white' : 'text-black'
@@ -155,10 +137,6 @@ export default function Landing({ onNavigate }: LandingProps) {
   const cardBg = isNight ? 'bg-[#161620] border-[#2D2D2D]' : 'bg-white border-[#E0E0E0]'
   const skeletonBg = isNight ? 'bg-[#1E1E24]' : 'bg-[#E8E8E4]'
   const heroImg = isNight ? imgHeroNight : imgHeroDay
-
-  const safeIdx = galleryItems.length > 0 ? currentPhotoIdx % galleryItems.length : 0
-  const currentMedia = galleryItems[safeIdx]
-  const videoPreview = currentMedia?.isVideo ? getVideoPreviewSource(currentMedia.rawUrl) : null
 
   return (
     <div className={`${bg} min-h-screen transition-colors duration-300`}>
@@ -282,7 +260,7 @@ export default function Landing({ onNavigate }: LandingProps) {
           )}
         </section>
 
-        {/* Galerie Preview Section — Photos & Aperçus Vidéos automatiques */}
+        {/* Galerie Photo & Vidéo Preview Section */}
         <section className="py-6">
           <div className="mb-4 flex items-center justify-between">
             <h2
@@ -301,70 +279,122 @@ export default function Landing({ onNavigate }: LandingProps) {
           </div>
 
           {galleryLoading ? (
-            <div className={`w-full h-[280px] sm:h-[400px] rounded-[12px] animate-pulse ${skeletonBg}`} />
-          ) : galleryItems.length === 0 ? null : (
+            <div className={`w-full h-[280px] sm:h-[400px] lg:h-[460px] rounded-[12px] animate-pulse ${skeletonBg}`} />
+          ) : !currentMedia ? null : (
             <div
-              onClick={() => onNavigate('adn')}
-              className="group cursor-pointer relative h-[280px] sm:h-[400px] rounded-[12px] overflow-hidden border border-black/10 dark:border-white/10 bg-black"
+              onClick={() => {
+                if (!currentMedia.isVideo) onNavigate('adn')
+              }}
+              className={`group relative h-[280px] sm:h-[400px] lg:h-[460px] rounded-[12px] overflow-hidden border border-black/10 dark:border-white/10 bg-black ${
+                currentMedia.isVideo ? '' : 'cursor-pointer'
+              }`}
             >
-              {/* Miniature de fond (toujours affichée pendant le chargement de la vidéo) */}
-              {currentMedia.thumbSrc && (
-                <img
-                  key={`thumb-${safeIdx}`}
-                  src={currentMedia.thumbSrc}
-                  alt={currentMedia.caption || 'Rock Food Galerie'}
-                  className="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out group-hover:scale-105"
-                />
-              )}
-
-              {/* Lecteur d'aperçu vidéo si l'élément courant est une vidéo */}
-              {currentMedia.isVideo && videoPreview && (
-                videoPreview.kind === 'video' ? (
+              {currentMedia.isVideo ? (
+                isDirectVideoFile(currentMedia.rawUrl) ? (
                   <video
-                    key={`vid-${safeIdx}`}
-                    src={videoPreview.src}
+                    key={currentMedia.rawUrl}
+                    src={currentMedia.rawUrl}
                     autoPlay
                     muted
                     loop
                     playsInline
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <iframe
-                    key={`iframe-${safeIdx}`}
-                    src={videoPreview.src}
-                    title={currentMedia.caption || 'Rock Food Video Preview'}
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none scale-[1.35]"
-                    frameBorder="0"
-                    allow="autoplay; encrypted-media; picture-in-picture"
+                    key={currentMedia.rawUrl}
+                    src={getVideoEmbedUrl(currentMedia.rawUrl)}
+                    className="w-full h-full border-0"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                    title={currentMedia.caption || 'Rock Food Vidéo'}
                   />
                 )
+              ) : (
+                <img
+                  key={safeIdx}
+                  src={currentMedia.src}
+                  alt={currentMedia.caption || 'Rock Food Galerie'}
+                  className="w-full h-full object-cover transition-all duration-700 ease-in-out group-hover:scale-105"
+                />
               )}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent pointer-events-none" />
+              {/* Dégradé en pointer-events-none pour laisser l'accès au lecteur vidéo */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20" />
 
-              {/* Badge indicateur Vidéo */}
+              {/* Badge Vidéo en haut à gauche */}
               {currentMedia.isVideo && (
-                <div className="absolute top-4 left-4 flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-sm text-white text-[11px] font-bold uppercase tracking-[0.05em] pointer-events-none">
-                  <span className="w-2 h-2 rounded-full bg-[#FF007A] animate-pulse" />
-                  <span>{lang === 'en' ? 'VIDEO' : 'VIDÉO'}</span>
-                </div>
+                <span
+                  className={`pointer-events-none absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white ${accentBg} ${accentGlow}`}
+                  style={{ fontFamily: "'Inter', sans-serif" }}
+                >
+                  {lang === 'en' ? 'VIDEO' : 'VIDÉO'}
+                </span>
               )}
 
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white pointer-events-none">
-                <p className="text-[13px] font-medium drop-shadow" style={{ fontFamily: "'Inter', sans-serif" }}>
+              {/* Flèches Précédent / Suivant */}
+              {galleryItems.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    aria-label={lang === 'en' ? 'Previous' : 'Précédent'}
+                    className={`absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/55 hover:bg-black/85 text-white backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all ${
+                      isNight ? 'hover:border-[#FF007A] hover:text-[#FF007A]' : ''
+                    }`}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    aria-label={lang === 'en' ? 'Next' : 'Suivant'}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/55 hover:bg-black/85 text-white backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all ${
+                      isNight ? 'hover:border-[#FF007A] hover:text-[#FF007A]' : ''
+                    }`}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+                </>
+              )}
+
+              {/* Légende et indicateurs de pagination */}
+              <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-20 flex items-center justify-between gap-4 text-white">
+                <p
+                  onClick={() => onNavigate('adn')}
+                  className="pointer-events-auto cursor-pointer text-[13px] font-medium drop-shadow truncate hover:underline"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
+                >
                   {currentMedia.caption || (lang === 'en' ? 'Click to explore full gallery' : 'Cliquer pour explorer la galerie')}
                 </p>
-                <div className="flex gap-1.5">
-                  {galleryItems.map((_, idx) => (
-                    <span
-                      key={idx}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        idx === safeIdx ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
-                      }`}
-                    />
-                  ))}
-                </div>
+
+                {galleryItems.length > 1 && (
+                  <div className="pointer-events-auto flex items-center gap-1.5 shrink-0">
+                    {galleryItems.map((item, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        aria-label={`Slide ${idx + 1}`}
+                        onClick={e => {
+                          e.stopPropagation()
+                          setCurrentPhotoIdx(idx)
+                        }}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          idx === safeIdx
+                            ? 'w-5 bg-white'
+                            : item.isVideo
+                              ? 'w-2 bg-white/65 hover:bg-white'
+                              : 'w-1.5 bg-white/40 hover:bg-white/75'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
