@@ -15,6 +15,7 @@ interface ApiGalleryItem {
   url?: string
   caption?: string
   alt?: string
+  type?: string // 'video' ou undefined/vide pour une image
 }
 
 function formatImageUrl(url?: string): string {
@@ -26,6 +27,41 @@ function formatImageUrl(url?: string): string {
   return url
 }
 
+// Fonction pour extraire l'URL d'intégration (embed) pour une vidéo
+function getVideoEmbedUrl(url: string): string {
+  // YouTube
+  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`
+  }
+  // Google Drive
+  const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/)
+  if (driveMatch && driveMatch[1]) {
+    return `https://drive.google.com/file/d/${driveMatch[1]}/preview`
+  }
+  return url
+}
+
+// Fonction pour extraire la miniature (thumbnail) d'une vidéo
+function getVideoThumbnail(url: string): string {
+  // YouTube : utilise l'URL de la miniature haute qualité
+  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)
+  if (ytMatch && ytMatch[1]) {
+    return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`
+  }
+  // Google Drive : utilise le formatImageUrl existant qui génère une miniature
+  return formatImageUrl(url)
+}
+
+// Icône Play pour indiquer les vidéos dans la galerie
+const PlayIcon = ({ size = 48 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" fill="rgba(0,0,0,0.6)" />
+    <path d="M9.5 8L16.5 12L9.5 16V8Z" fill="white" />
+  </svg>
+)
+
+
 export default function ADN() {
   const { theme } = useTheme()
   const { lang, t } = useLanguage()
@@ -35,7 +71,7 @@ export default function ADN() {
   const [galleryItems, setGalleryItems] = useState<ApiGalleryItem[]>([])
   const [galleryLoading, setGalleryLoading] = useState(true)
   const [visibleCount, setVisibleCount] = useState(12)
-  const [selectedImage, setSelectedImage] = useState<{ src: string; caption?: string } | null>(null)
+  const [selectedItem, setSelectedItem] = useState<{ url: string; caption?: string; type: string } | null>(null)
 
   // Ajustement du nombre initial selon mobile (6) ou PC (12)
   useEffect(() => {
@@ -62,10 +98,10 @@ export default function ADN() {
     return () => { cancelled = true }
   }, [])
 
-  // Fermer la photo avec la touche Échap
+  // Fermer l'aperçu avec la touche Échap
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedImage(null)
+      if (e.key === 'Escape') setSelectedItem(null)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -177,7 +213,7 @@ export default function ADN() {
               className={`text-[24px] lg:text-[32px] uppercase leading-[1.1] ${text}`}
               style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
             >
-              {lang === 'en' ? 'PHOTO GALLERY' : 'GALERIE PHOTO'}
+              {lang === 'en' ? 'GALLERY' : 'GALERIE'}
             </h2>
             <p className={`text-[13px] ${textSub}`} style={{ fontFamily: "'Inter', sans-serif" }}>
               {lang === 'en' ? 'Moments captured at Rock Food' : 'Les instants capturés au Rock Food'}
@@ -194,20 +230,33 @@ export default function ADN() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                 {galleryItems.slice(0, visibleCount).map((item, index) => {
-                  const imgSrc = formatImageUrl(item.image || item.url)
+                  const rawUrl = item.image || item.url || ''
                   const caption = item.caption || item.alt || ''
+                  const isVideo = item.type?.toLowerCase() === 'video'
+                  
+                  // Déterminer la source de la miniature (image formatée ou thumbnail de vidéo)
+                  const thumbSrc = isVideo ? getVideoThumbnail(rawUrl) : formatImageUrl(rawUrl)
+                  
                   return (
                     <div
                       key={index}
-                      onClick={() => setSelectedImage({ src: imgSrc, caption })}
+                      onClick={() => setSelectedItem({ url: rawUrl, caption, type: isVideo ? 'video' : 'image' })}
                       className="group relative aspect-square rounded-2xl overflow-hidden bg-black/5 border border-black/10 dark:border-white/10 cursor-pointer"
                     >
                       <img
-                        src={imgSrc}
-                        alt={caption || `Rock Food photo ${index + 1}`}
+                        src={thumbSrc}
+                        alt={caption || `Rock Food media ${index + 1}`}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy"
                       />
+                      
+                      {/* Affichage de l'icône Play si c'est une vidéo */}
+                      {isVideo && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none transition-transform duration-300 group-hover:scale-110">
+                          <PlayIcon />
+                        </div>
+                      )}
+
                       {caption && (
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end p-3">
                           <p className="text-white text-[12px] font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -233,7 +282,7 @@ export default function ADN() {
                       }`}
                       style={{ fontFamily: "'Inter', sans-serif" }}
                     >
-                      {lang === 'en' ? 'Show more photos' : 'Voir plus de photos'}
+                      {lang === 'en' ? 'Show more' : 'Voir plus'}
                     </button>
                   ) : (
                     <button
@@ -256,14 +305,14 @@ export default function ADN() {
 
       </div>
 
-      {/* ─── Modal Aperçu Photo Taille Réelle (Lightbox) ──────────────────── */}
-      {selectedImage && (
+      {/* ─── Modal Aperçu Media (Lightbox pour Photos et Vidéos) ────────────── */}
+      {selectedItem && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-8"
+          onClick={() => setSelectedItem(null)}
         >
           <button
-            onClick={() => setSelectedImage(null)}
+            onClick={() => setSelectedItem(null)}
             className="absolute top-5 right-5 text-white/80 hover:text-white bg-black/40 hover:bg-black/70 rounded-full w-10 h-10 flex items-center justify-center text-xl transition-all z-10"
             aria-label="Fermer"
           >
@@ -271,17 +320,32 @@ export default function ADN() {
           </button>
 
           <div
-            className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center"
+            className="relative w-full max-w-5xl flex flex-col items-center justify-center"
             onClick={e => e.stopPropagation()}
           >
-            <img
-              src={selectedImage.src}
-              alt={selectedImage.caption || 'Aperçu photo'}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-            />
-            {selectedImage.caption && (
-              <p className="mt-3 text-white/90 text-[14px] text-center font-medium bg-black/60 px-4 py-1.5 rounded-full" style={{ fontFamily: "'Inter', sans-serif" }}>
-                {selectedImage.caption}
+            {selectedItem.type === 'video' ? (
+              // Lecteur vidéo (Iframe pour YouTube ou Google Drive)
+              <div className="w-full aspect-video rounded-xl overflow-hidden shadow-2xl bg-black">
+                <iframe
+                  src={getVideoEmbedUrl(selectedItem.url)}
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              // Affichage classique d'une image
+              <img
+                src={formatImageUrl(selectedItem.url)}
+                alt={selectedItem.caption || 'Aperçu'}
+                className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+              />
+            )}
+            
+            {selectedItem.caption && (
+              <p className="mt-4 text-white/90 text-[14px] text-center font-medium bg-black/60 px-4 py-1.5 rounded-full" style={{ fontFamily: "'Inter', sans-serif" }}>
+                {selectedItem.caption}
               </p>
             )}
           </div>
